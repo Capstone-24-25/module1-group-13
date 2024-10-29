@@ -50,14 +50,11 @@ Summarize your findings here. I've included some subheaders in a way that seems 
 
 1.  What do you imagine is the reason for log-transforming the protein levels in `biomarker-raw.csv`? (Hint: look at the distribution of raw values for a sample of proteins.)
 
-Potential reasons for log-transforming the protein levels in `biomarker-raw.csv` include normalizing skewed data by reducing the impact of outliers.
-
-```{}
-```
+Potential reasons for log-transforming the protein levels in `biomarker-raw.csv` include normalizing skewed data by reducing the impact of outliers. Observe the skew and distribution of the raw biomarker data below.
 
 1.  Temporarily remove the outlier trimming from preprocessing and do some exploratory analysis of outlying values. Are there specific *subjects* (not values) that seem to be outliers? If so, are outliers more frequent in one group or the other? (Hint: consider tabluating the number of outlying values per subject.)
 
-### Methodlogical variations: Nikhil/Sanchit/Shirley
+### Methodological variations: Nikhil/Sanchit/Shirley
 
 a\) repeat the analysis on training partition
 
