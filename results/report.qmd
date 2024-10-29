@@ -32,7 +32,9 @@ Write a brief one-paragraph abstract that describes the contents of your write-u
 
 ## Dataset: Leena
 
-Write a brief data description, including: how data were obtained; sample characteristics; variables measured; and data preprocessing. This can be largely based on the source paper and should not exceed 1-2 paragraphs.
+The dataset involves the analysis of 1,125 different proteins to conclude whether or not certain proteins were blood biomarkers for Autism Spectrum Disorder in boys. Data was obtained from a total of 154 boys with an average age of about 5.65. 76 of the participants were clinically diagnosed with Autism Spectrum Disorder (ASD) and 78 were confirmed to be typically-developing (TD) boys. Blood samples were taken from all participants and analyzed using the SOMAScan platform 1.3k to measure levels of binding to specific proteins.
+
+Obtained data regarding protein abundance was normalized through both log10 and z-transformations. Outliers outside of the range \[-3,3\] after the z-transformation were dropped. Proteins that were determined to predict ASD were identified through random forest method, t-tests, and correlation methods. The metric of significance was area under the curve.
 
 ## Summary of published analysis
 
