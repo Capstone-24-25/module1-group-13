@@ -1,0 +1,321 @@
+---
+title: "Assignemnt_2"
+author: "Sanchit Mehrotra"
+date: "2024-10-28"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(infer)
+library(randomForest)
+library(tidymodels)
+library(modelr)
+library(yardstick)
+```
+
+```{r}
+ load("C:/Users/sanch/OneDrive/Desktop/PSTAT 197A/Assignment 2/biomarker-clean.RData")
+```
+
+```{r}
+set.seed(1)
+
+#partition data (80%)
+partitions <- biomarker_clean %>%
+  initial_split(prop = 0.8)
+train_data <- training(partitions)
+
+```
+
+```{r}
+## MULTIPLE TESTING
+# T-test
+####################
+
+# function to compute tests
+test_fn <- function(.df){
+  t_test(.df, 
+         formula = level ~ group,
+         order = c('ASD', 'TD'),
+         alternative = 'two-sided',
+         var.equal = F)
+}
+
+ttests_out <- train_data %>%
+  # drop ADOS score
+  select(-ados) %>%
+  # arrange in long format
+  pivot_longer(-group, 
+               names_to = 'protein', 
+               values_to = 'level') %>%
+  # nest by protein
+  nest(data = c(level, group)) %>% 
+  # compute t tests
+  mutate(ttest = map(data, test_fn)) %>%
+  unnest(ttest) %>%
+  # sort by p-value
+  arrange(p_value) %>%
+  # multiple testing correction
+  mutate(m = n(),
+         hm = log(m) + 1/(2*m) - digamma(1),
+         rank = row_number(),
+         p.adj = m*hm*p_value/rank)
+
+# select significant proteins
+New_proteins_s1 <- ttests_out %>%
+  slice_min(p.adj, n = 10) %>%
+  pull(protein)
+
+New_proteins_s1
+
+```
+
+```{r}
+## RANDOM FOREST
+##################
+
+# store predictors and response separately
+predictors <- train_data %>%
+  select(-c(group, ados))
+
+response <- train_data %>% pull(group) %>% factor()
+
+# fit RF
+set.seed(101422)
+rf_out <- randomForest(x = predictors, 
+                       y = response, 
+                       ntree = 1000, 
+                       importance = T)
+
+# check errors
+rf_out$confusion
+
+# compute importance scores
+New_proteins_s2 <- rf_out$importance %>% 
+  as_tibble() %>%
+  mutate(protein = rownames(rf_out$importance)) %>%
+  slice_max(MeanDecreaseGini, n = 10) %>%
+  pull(protein)
+
+New_proteins_s2
+```
+
+```{r}
+## LOGISTIC REGRESSION
+#######################
+
+# select subset of interest
+proteins_sstar <- intersect(New_proteins_s1, New_proteins_s2)
+
+biomarker_sstar <- biomarker_clean %>%
+  select(group, any_of(proteins_sstar)) %>%
+  mutate(class = (group == 'ASD')) %>%
+  select(-group)
+
+# partition into training and test set
+set.seed(101422)
+biomarker_split <- biomarker_sstar %>%
+  initial_split(prop = 0.8)
+
+# fit logistic regression model to training set
+fit <- glm(class ~ ., 
+           data = training(biomarker_split), 
+           family = 'binomial')
+
+# evaluate errors on test set
+class_metrics <- metric_set(sensitivity, 
+                            specificity, 
+                            accuracy,
+                            roc_auc)
+
+testing(biomarker_split) %>%
+  add_predictions(fit, type = 'response') %>%
+  mutate(est = as.factor(pred > 0.5), tr_c = as.factor(class)) %>%
+  class_metrics(estimate = est,
+              truth = tr_c, pred,
+              event_level = 'second')
+
+```
+```{r}
+# function to compute tests
+
+test_fn <- function(.df){
+  t_test(.df, 
+         formula = level ~ group,
+         order = c('ASD', 'TD'),
+         alternative = 'two-sided',
+         var.equal = F)
+}
+
+ttests_out <- biomarker_clean %>%
+  # drop ADOS score
+  select(-ados) %>%
+  # arrange in long format
+  pivot_longer(-group, 
+               names_to = 'protein', 
+               values_to = 'level') %>%
+  # nest by protein
+  nest(data = c(level, group)) %>% 
+  # compute t tests
+  mutate(ttest = map(data, test_fn)) %>%
+  unnest(ttest) %>%
+  # sort by p-value
+  arrange(p_value) %>%
+  # multiple testing correction
+  mutate(m = n(),
+         hm = log(m) + 1/(2*m) - digamma(1),
+         rank = row_number(),
+         p.adj = m*hm*p_value/rank)
+
+# select significant proteins
+
+proteins_s1 <- ttests_out %>%
+  slice_min(p.adj, n = 15) %>%
+  pull(protein)
+
+proteins_s1
+```
+
+```{r}
+# b.2
+## RANDOM FOREST
+##################
+
+# store predictors and response separately
+predictors <- biomarker_clean %>%
+  select(-c(group, ados))
+
+response <- biomarker_clean %>% pull(group) %>% factor()
+
+# fit RF
+set.seed(101422)
+rf_out <- randomForest(x = predictors, 
+                       y = response, 
+                       ntree = 1000, 
+                       importance = T)
+
+# check errors
+rf_out$confusion
+
+# compute importance scores
+proteins_s2 <- rf_out$importance %>% 
+  as_tibble() %>%
+  mutate(protein = rownames(rf_out$importance)) %>%
+  slice_max(MeanDecreaseGini, n = 15) %>%
+  pull(protein)
+
+proteins_s2
+
+```
+
+```{r}
+# b.3
+## LOGISTIC REGRESSION
+#######################
+
+# select subset of interest
+proteins_sstar <- intersect(New_proteins_s1, New_proteins_s2)
+
+biomarker_sstar <- biomarker_clean %>%
+  select(group, any_of(proteins_sstar)) %>%
+  mutate(class = (group == 'ASD')) %>%
+  select(-group)
+
+# partition into training and test set
+set.seed(101422)
+biomarker_split <- biomarker_sstar %>%
+  initial_split(prop = 0.8)
+
+# fit logistic regression model to training set
+fit <- glm(class ~ ., 
+           data = training(biomarker_split), 
+           family = 'binomial')
+
+# evaluate errors on test set
+class_metrics <- metric_set(sensitivity, 
+                            specificity, 
+                            accuracy,
+                            roc_auc)
+
+testing(biomarker_split) %>%
+  add_predictions(fit, type = 'response') %>%
+  mutate(est = as.factor(pred > 0.5), tr_c = as.factor(class)) %>%
+  class_metrics(estimate = est,
+              truth = tr_c, pred,
+              event_level = 'second')
+```
+
+### SANCHIT MEHROTRA
+# Question, point 3:
+```{r}
+# Assume `New_proteins_s1` and `New_proteins_s2` are vectors containing top proteins from different selection methods
+# Convert to list format if there are more methods (e.g., `list_of_proteins <- list(New_proteins_s1, New_proteins_s2, ...)`)
+
+all_proteins <- c(New_proteins_s1, New_proteins_s2) # Combine top proteins from multiple methods
+
+# Set fuzzy threshold: include proteins appearing in at least 70% of the methods
+threshold <- 0.7 *2  # Update `2` based on the number of selection methods used
+fuzzy_intersection_proteins <- names(protein_counts[protein_counts >= threshold])
+fuzzy_metrics <- evaluate_model(fuzzy_intersection_proteins, response, predictors)
+
+# Using hard intersection proteins for evaluation
+hard_intersection_proteins <- intersect(New_proteins_s1, New_proteins_s2)
+hard_metrics <- evaluate_model(hard_intersection_proteins, response, predictors)
+
+# Print proteins from fuzzy intersection
+print(fuzzy_intersection_proteins)
+print(hard_intersection_proteins)
+
+# Use `fuzzy_intersection_proteins` for modeling instead of `proteins_sstar`
+
+```
+# part 4
+```{r}
+library(randomForest)
+library(pROC) 
+
+# evaluation function
+evaluate_model <- function(selected_proteins, label_data, feature_data) {
+  # Subset data by selected proteins
+  model_data <- feature_data[, selected_proteins, drop = FALSE]
+  
+  # Train Random Forest
+  rf_model <- randomForest(x = model_data, y = label_data, ntree = 1000, importance = TRUE)
+  rf_predictions <- predict(rf_model, model_data, type = "prob")[,2]
+  rf_auroc <- roc(label_data, rf_predictions)$auc
+  
+  # Train Logistic Regression
+  logistic_model <- glm(label_data ~ ., data = model_data, family = "binomial")
+  logistic_predictions <- predict(logistic_model, model_data, type = "response")
+  logistic_auroc <- roc(label_data, logistic_predictions)$auc
+  
+  # Return AUROC values for comparison
+  return(list(rf_auroc = rf_auroc, logistic_auroc = logistic_auroc))
+}
+
+# Display comparison results
+comparison_df <- data.frame(
+  Method = c("Hard Intersection", "Fuzzy Intersection"),
+  RF_AUROC = c(hard_metrics$rf_auroc, fuzzy_metrics$rf_auroc),
+  Logistic_AUROC = c(hard_metrics$logistic_auroc, fuzzy_metrics$logistic_auroc)
+)
+print(comparison_df)
+
+
+```
+Random Forest  achieved a perfect AUROC of 1.0 with both hard and fuzzy intersections. This suggests that Random Forest is robust to changes in feature selection methods and likely effective in separating classes with the given data.
+Logistic Regression showed an increase in AUROC from 0.797 with the hard intersection to 0.870 with the fuzzy intersection. This indicates that the fuzzy intersection, which includes a broader set of predictive proteins, enhances the model's ability to differentiate between classes.
+
+Final Conclusion:
+The Random Forest model maintains strong classification performance regardless of the feature selection method. However, Logistic Regression benefits from the flexibility of the fuzzy intersection, resulting in improved classification accuracy and a better AUROC score. This suggests that a broader selection of predictive proteins enhances its ability to distinguish classes effectively.
+
+
+
+
+
+
+
+
+
+
