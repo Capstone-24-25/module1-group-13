@@ -385,7 +385,51 @@ The old method has better overall discriminatory power, so its better at disting
 ### Improved classifier: Nikhil/Sanchit/Shirley
 
 ```{r}
+proteins_simpler <- rf_out$importance %>%
+  as_tibble() %>%
+  mutate(protein = rownames(rf_out$importance)) %>%
+  filter(protein != "class") %>%         # Exclude "class" from the features
+  slice_max(MeanDecreaseGini, n = 5) %>%  # Select top 5 features by MeanDecreaseGini
+  pull(protein)
 
+# Step 2: Prepare Data with Reduced Feature Set
+biomarker_simpler <- biomarker_clean %>%
+  select(group, any_of(proteins_simpler)) %>% 
+  mutate(class = (group == 'ASD')) %>% # Binary encoding for logistic regression
+  select(-group)
+
+# Step 3: Split Data into Training and Test Sets
+set.seed(101422)
+biomarker_split_simpler <- biomarker_simpler %>%
+  initial_split(prop = 0.8)
+
+# Step 4: Fit Logistic Regression on Training Set
+fit_simpler <- glm(class ~ ., 
+                   data = training(biomarker_split_simpler), 
+                   family = 'binomial')
+
+# Step 5: Evaluate Model on Test Set with Consistent Features
+class_metrics <- metric_set(sensitivity, specificity, accuracy, roc_auc)
+
+test_results <- testing(biomarker_split) %>%
+  add_predictions(fit, type = 'response') %>%    # Add predictions
+  mutate(est = as.factor(pred > 0.5), tr_c = as.factor(class)) # Binary classification
+
+test_results <- testing(biomarker_split_simpler) %>%
+  add_predictions(fit_simpler, type = 'response') %>%  # Adds predicted probabilities
+  mutate(
+    est = as.factor(pred > 0.5),  # Binary classification based on threshold
+    tr_c = as.factor(class)       # Truth variable
+  )
+
+# Calculate metrics, specifying `pred` directly as in the original code
+test_results %>%
+  class_metrics(
+    estimate = est,
+    truth = tr_c,
+    pred,                     
+    event_level = 'second'
+  )
 ```
 
 ```{r}
