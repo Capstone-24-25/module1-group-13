@@ -1,8 +1,8 @@
 ---
 title: "Biomarkers of ASD"
 subtitle: "If you want a subtitle put it here"
-author: "List names here"
-date: last-modified
+author: "Leena, Shirley, Nikhil, Sanchit"
+date: 10/30/2024
 published-title: "Updated"
 editor: visual
 format: html
