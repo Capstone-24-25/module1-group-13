@@ -1,7 +1,7 @@
 ---
 title: "Biomarkers of ASD"
 subtitle: "If you want a subtitle put it here"
-author: "Leena Anqud, Nikhil, Sanchit, Shirley"
+author: "List names here"
 date: last-modified
 published-title: "Updated"
 editor: visual
@@ -30,17 +30,13 @@ library(yardstick)
 
 Write a brief one-paragraph abstract that describes the contents of your write-up.
 
-## Dataset:
+## Dataset: Leena
 
-The dataset involves the analysis of 1,125 different proteins to conclude whether or not certain proteins were blood biomarkers for Autism Spectrum Disorder in boys. Data was obtained from a total of 154 boys with an average age of about 5.65. 76 of the participants were clinically diagnosed with Autism Spectrum Disorder (ASD) and 78 were confirmed to be typically-developing (TD) boys. Blood samples were taken from all participants and analyzed using the SOMAScan platform 1.3k to measure levels of binding to specific proteins.
+Write a brief data description, including: how data were obtained; sample characteristics; variables measured; and data preprocessing. This can be largely based on the source paper and should not exceed 1-2 paragraphs.
 
-Obtained data regarding protein abundance was normalized through both log10 and z-transformations. Outliers outside of the range \[-3,3\] after the z-transformation were dropped. Proteins that were determined to predict ASD were identified through random forest method, t-tests, and correlation methods. The metric of significance was area under the curve.
+## Summary of published analysis
 
-## Summary of published analysis:
-
-The study utilized three methods, multiple testing, correlation with severity, and random forest. Multiple testing involves hypothesis testing and t-tests to determine which proteins result in significantly different levels of serum. In the case of the study, the top 10 proteins with the greatest significance were utilized in prediction. Correlation with severity involves finding the strongest correlations between different proteins and ADOS. In the case of the study, they measured protein correlation to ADOS total scores. Variable importance involves a measurement for which predictors have most influence in a random forest. In the case of the study, they trained a model to predict protein importance in ASD in comparison to TD. They were then able to rank these different proteins by importance. With the top-performing proteins from each approach identified, the panel identified the 'core' proteins by determining their presence in each test result.
-
-The five 'core' proteins common across each of the three methods were: mitogen-activated protein kinase 14 (MAPK14), immunoglobulin D (IgD), dermatopontin (DERM), ephrin type-B receptor 2 (EPHB2), and soluble urokinase-type plasminogen activator receptor (suPAR). To optimize AUC score, the following four proteins were added to the five 'core' proteins: receptor tyrosine kinase-like orphan receptor 1 \[ROR1\], platelet receptor Gl24 \[GI24\], eukaryotic translation initiation factor 4H \[elF-4H\], and arylsulfatase B \[ARSB\]. The 'optimal' nine proteins resulted in a AUC score of 0.860±0.064, where sensitivity (true positive rate) was 0.833±0.118 and specificity (true negative rate) was 0.846±0.118.
+Summarize the methodology of the paper in 1-3 paragraphs. You need not explain the methods in depth as we did in class; just indicate what methods were used and how they were combined. If possible, include a diagram that depicts the methodological design. (Quarto has support for [GraphViz and Mermaid flowcharts](https://quarto.org/docs/authoring/diagrams.html).) Provide key results: the proteins selected for the classifier and the estimated accuracy.
 
 ## Findings
 
@@ -48,25 +44,14 @@ Summarize your findings here. I've included some subheaders in a way that seems 
 
 ### Impact of preprocessing and outliers: Leena
 
-1.  What do you imagine is the reason for log-transforming the protein levels in `biomarker-raw.csv`? (Hint: look at the distribution of raw values for a sample of proteins.)
+Tasks 1-2
 
-```{r}
-raw_data <- read.csv('../data/biomarker-raw.csv')
-head(raw_data)
-```
-
-Potential reasons for log-transforming the protein levels in `biomarker-raw.csv` include normalizing skewed data by reducing the impact of outliers. Observe the skew and distribution of the raw biomarker data below.
-
-1.  Temporarily remove the outlier trimming from preprocessing and do some exploratory analysis of outlying values. Are there specific *subjects* (not values) that seem to be outliers? If so, are outliers more frequent in one group or the other? (Hint: consider tabluating the number of outlying values per subject.)
-
-### Methodological variations: Nikhil/Sanchit/Shirley
+### Methodlogical variations: Nikhil/Sanchit/Shirley
 
 a\) repeat the analysis on training partition
 
 ```{r}
 set.seed(1)
-
-biomarker_clean <- load('../data/biomarker-clean.RData')
 
 #partition data (80%)
 partitions <- biomarker_clean %>%
@@ -403,41 +388,36 @@ The old method has better overall discriminatory power, so its better at disting
 proteins_simpler <- rf_out$importance %>%
   as_tibble() %>%
   mutate(protein = rownames(rf_out$importance)) %>%
-  filter(protein != "class") %>%         # Exclude "class" from the features
-  slice_max(MeanDecreaseGini, n = 5) %>%  # Select top 5 features by MeanDecreaseGini
+  filter(protein != "class") %>%         
+  slice_max(MeanDecreaseGini, n = 5) %>%  
   pull(protein)
 
-# Step 2: Prepare Data with Reduced Feature Set
 biomarker_simpler <- biomarker_clean %>%
   select(group, any_of(proteins_simpler)) %>% 
-  mutate(class = (group == 'ASD')) %>% # Binary encoding for logistic regression
+  mutate(class = (group == 'ASD')) %>% 
   select(-group)
 
-# Step 3: Split Data into Training and Test Sets
 set.seed(101422)
 biomarker_split_simpler <- biomarker_simpler %>%
   initial_split(prop = 0.8)
 
-# Step 4: Fit Logistic Regression on Training Set
 fit_simpler <- glm(class ~ ., 
                    data = training(biomarker_split_simpler), 
                    family = 'binomial')
 
-# Step 5: Evaluate Model on Test Set with Consistent Features
 class_metrics <- metric_set(sensitivity, specificity, accuracy, roc_auc)
 
 test_results <- testing(biomarker_split) %>%
-  add_predictions(fit, type = 'response') %>%    # Add predictions
-  mutate(est = as.factor(pred > 0.5), tr_c = as.factor(class)) # Binary classification
+  add_predictions(fit, type = 'response') %>%   
+  mutate(est = as.factor(pred > 0.5), tr_c = as.factor(class)) 
 
 test_results <- testing(biomarker_split_simpler) %>%
-  add_predictions(fit_simpler, type = 'response') %>%  # Adds predicted probabilities
+  add_predictions(fit_simpler, type = 'response') %>%  
   mutate(
-    est = as.factor(pred > 0.5),  # Binary classification based on threshold
-    tr_c = as.factor(class)       # Truth variable
+    est = as.factor(pred > 0.5),  
+    tr_c = as.factor(class)       
   )
 
-# Calculate metrics, specifying `pred` directly as in the original code
 test_results %>%
   class_metrics(
     estimate = est,
@@ -448,5 +428,73 @@ test_results %>%
 ```
 
 ```{r}
+library(glmnet)
+library(rsample)
 
+biomarker_clean <- biomarker_clean %>%
+  mutate(class = ifelse(group == "ASD", 1, 0))
+
+y <- biomarker_clean$class
+table(y)
+
+# Exclude non-numeric columns from biomarker_clean for model.matrix
+biomarker_clean_numeric <- biomarker_clean %>%
+  select(-group, -ados)  # Remove non-numeric or unwanted columns
+
+biomarker_clean_numeric <- biomarker_clean_numeric %>%
+  drop_na()
+
+# Convert to model matrix
+x <- as.matrix(biomarker_clean_numeric)
+y <- biomarker_clean %>%
+  filter(complete.cases(biomarker_clean_numeric)) %>%
+  pull(class)
+
+# Fit LASSO model with cross-validation to find optimal lambda
+set.seed(101422)
+lasso_model <- cv.glmnet(x, y, family = "binomial", alpha = 1)
+
+# Get features with non-zero coefficients at optimal lambda
+lasso_features <- rownames(coef(lasso_model, s = "lambda.min"))[-1]  # Skip intercept
+
+# Filter biomarker_clean to only include selected LASSO features
+biomarker_lasso <- biomarker_clean %>%
+  select(group, any_of(lasso_features)) %>%
+  mutate(class = (group == 'ASD')) %>%
+  select(-group)
+
+# Split data into training and test sets
+biomarker_split_lasso <- initial_split(biomarker_lasso, prop = 0.8)
+train_data <- training(biomarker_split_lasso)
+test_data <- testing(biomarker_split_lasso)
+
+train_data_reduced <- train_data %>%
+  select(class, any_of(lasso_features[1:40]))  # Use top LASSO features
+
+# Refit the logistic regression model
+fit_lasso <- glm(class ~ ., data = train_data_reduced, family = "binomial")
+
+# Define classification metrics explicitly
+# Define classification metrics, excluding roc_auc for binary estimate
+class_metrics <- metric_set(accuracy, sensitivity, specificity)
+
+test_data <- test_data %>%
+  mutate(
+    class = as.factor(class),  # Convert class to factor
+    pred = predict(fit_lasso, newdata = test_data, type = "response"),  # Probability
+    est = as.factor(pred > 0.5)  # Binary classification
+  )
+
+# Evaluate the model on test data
+test_results_lasso <- test_data %>%
+  mutate(
+    pred = predict(fit_lasso, newdata = test_data, type = "response"),  # Probability
+    est = as.factor(pred > 0.5)  # Binary classification
+  ) %>%
+  class_metrics(truth = class, estimate = est)
+
+# Combine the results
+final_results <- bind_rows(test_results_lasso)
+
+print(final_results)
 ```
