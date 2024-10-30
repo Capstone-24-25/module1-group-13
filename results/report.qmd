@@ -34,22 +34,17 @@ This report presents a statistical analysis to identify blood biomarkers for Aut
 
 The dataset involves the analysis of 1,125 different proteins to conclude whether or not certain proteins were blood biomarkers for Autism Spectrum Disorder in boys. Data was obtained from a total of 154 boys with an average age of about 5.65. 76 of the participants were clinically diagnosed with Autism Spectrum Disorder (ASD) and 78 were confirmed to be typically-developing (TD) boys. Blood samples were taken from all participants and analyzed using the SOMAScan platform 1.3k to measure levels of binding to specific proteins.
 
-Obtained data regarding protein abundance was normalized through both log10 and z-transformations. Outliers outside of the range \[-3,3\] after the z-transformation were dropped. Proteins that were determined to predict ASD were identified through random forest method, t-tests, and correlation methods. The metric of significance was area under the curve.
+Obtained data regarding protein abundance was normalized through both log10 and z-transformations. Outliers outside of the range [-3,3] after the z-transformation were dropped. Proteins that were determined to predict ASD were identified through random forest method, t-tests, and correlation methods. The metric of significance was area under the curve.
 
 ## Summary of published analysis
 The study utilized three methods, multiple testing, correlation with severity, and random forest. Multiple testing involves hypothesis testing and t-tests to determine which proteins result in significantly different levels of serum. In the case of the study, the top 10 proteins with the greatest significance were utilized in prediction. Correlation with severity involves finding the strongest correlations between different proteins and ADOS. In the case of the study, they measured protein correlation to ADOS total scores. Variable importance involves a measurement for which predictors have most influence in a random forest. In the case of the study, they trained a model to predict protein importance in ASD in comparison to TD. They were then able to rank these different proteins by importance. With the top-performing proteins from each approach identified, the panel identified the 'core' proteins by determining their presence in each test result.
 
-The five 'core' proteins common across each of the three methods were: mitogen-activated protein kinase 14 (MAPK14), immunoglobulin D (IgD), dermatopontin (DERM), ephrin type-B receptor 2 (EPHB2), and soluble urokinase-type plasminogen activator receptor (suPAR). To optimize AUC score, the following four proteins were added to the five 'core' proteins: receptor tyrosine kinase-like orphan receptor 1 \[ROR1\], platelet receptor Gl24 \[GI24\], eukaryotic translation initiation factor 4H \[elF-4H\], and arylsulfatase B \[ARSB\]. The 'optimal' nine proteins resulted in a AUC score of 0.860±0.064, where sensitivity (true positive rate) was 0.833±0.118 and specificity (true negative rate) was 0.846±0.118.
+The five 'core' proteins common across each of the three methods were: mitogen-activated protein kinase 14 (MAPK14), immunoglobulin D (IgD), dermatopontin (DERM), ephrin type-B receptor 2 (EPHB2), and soluble urokinase-type plasminogen activator receptor (suPAR). To optimize AUC score, the following four proteins were added to the five 'core' proteins: receptor tyrosine kinase-like orphan receptor 1 [ROR1], platelet receptor Gl24 [GI24], eukaryotic translation initiation factor 4H [elF-4H], and arylsulfatase B [ARSB]. The 'optimal' nine proteins resulted in a AUC score of 0.860±0.064, where sensitivity (true positive rate) was 0.833±0.118 and specificity (true negative rate) was 0.846±0.118.
 
 ## Findings
 
-Summarize your findings here. I've included some subheaders in a way that seems natural to me; you can structure this section however you like.
-
-### Impact of preprocessing and outliers: Leena
-
-Tasks 1-2
-
-1.  What do you imagine is the reason for log-transforming the protein levels in \`biomarker-raw.csv\`? (Hint: look at the distribution of raw values for a sample of proteins.)
+### Impact of preprocessing and outliers:
+What do you imagine is the reason for log-transforming the protein levels in \`biomarker-raw.csv\`? (Hint: look at the distribution of raw values for a sample of proteins.)
 
 Potential reasons for log-transforming the protein levels in \`biomarker-raw.csv\` include normalizing skewed data by reducing the impact of outliers. Observe the skew and distribution of the raw biomarker data below.
 ```{r}
@@ -69,9 +64,47 @@ ggplot(sample_data, aes(x = as.numeric(level))) +
 \
 Our plot confirms that the raw data is significantly right skewed, with majority of protein levels on or at zero. We can assume that log-transforming the protein levels was a necessary step to ensure that the data could be further analyzed by methods that assume a normal distribution, like the regression that occurs at the latter half of the experiment.
 
-1.  Temporarily remove the outlier trimming from preprocessing and do some exploratory analysis of outlying values. Are there specific *subjects* (not values) that seem to be outliers? If so, are outliers more frequent in one group or the other? (Hint: consider tabluating the number of outlying values per subject.)
+Temporarily remove the outlier trimming from preprocessing and do some exploratory analysis of outlying values. Are there specific *subjects* (not values) that seem to be outliers? If so, are outliers more frequent in one group or the other?
+```{r}
+# Filter by subject
+td_data <- raw_data %>%
+  filter(Group == "TD") %>%
+  select(-Group, -Target.Full.Name)
 
-### Methodlogical variations: Nikhil/Sanchit/Shirley
+asd_data <- raw_data %>%
+  filter(Group == "ASD") %>%
+  select(-Group, -Target.Full.Name)
+
+# Remve first row, ensure values are numeric, combine multiple columns into one
+td_data <- td_data[-1, ]
+td_data[] <- lapply(td_data, as.numeric)
+td_melt <- melt(td_data, value.name = "Value")
+
+asd_data <- asd_data[-1, ]
+asd_data[] <- lapply(asd_data, as.numeric)
+asd_melt <- melt(asd_data, value.name = "Value")
+
+# Boxplots
+td_melt %>%
+  ggplot(aes(y = Value)) +
+  geom_boxplot(outlier.colour = "red", outlier.size = 1, fill = "blue") +
+  labs(title = "Protein Levels of Typically-Developing Boys",
+       y = "Values")
+
+asd_melt %>%
+  ggplot(aes(y = Value)) +
+  geom_boxplot(outlier.colour = "red", outlier.size = 1, fill = "blue") +
+  labs(title = "Protein Levels of Autism-Spectrum Disorder Boys",
+       y = "Values")
+
+# Summary Statistics
+summary(td_melt)
+summary(asd_melt)
+```
+\
+Comparing our two different subject groups, typically-developing (TD) boys and autism spectrum disorder (ASD) boys produces similar summary statistics for both groups. In our boxplots, we can visualize a significant number of outliers in both groups, notated in red. Similarly to our overall data distribution, both subject groups have majority of their values around closer to zero than infinity. The TD group has a minimum of 12.9 and a maximum of 380291.5, but the median is 1285.6. The ASD group has a minimum of 6 and a maximum of 314852.1, but the median is 1299.8. In both groups, there are significant large outliers, as we compare our median values to our maximum. Based on the similar values in each groups summary statistics, large outliers seem equally present in both typically-developing and autism-spectrum disorder boys.
+
+### Methodlogical variations:
 
 a\) repeat the analysis on training partition
 
