@@ -503,6 +503,11 @@ test_results %>%
     event_level = 'second'
   )
 ```
+Random Forest  achieved a perfect AUROC of 1.0 with both hard and fuzzy intersections. This suggests that Random Forest is robust to changes in feature selection methods and likely effective in separating classes with the given data.
+Logistic Regression showed an increase in AUROC from 0.797 with the hard intersection to 0.870 with the fuzzy intersection. This indicates that the fuzzy intersection, which includes a broader set of predictive proteins, enhances the model's ability to differentiate between classes.
+
+Final Conclusion:
+The Random Forest model maintains strong classification performance regardless of the feature selection method. However, Logistic Regression benefits from the flexibility of the fuzzy intersection, resulting in improved classification accuracy and a better AUROC score. This suggests that a broader selection of predictive proteins enhances its ability to distinguish classes effectively.
 
 ```{r}
 library(glmnet)
