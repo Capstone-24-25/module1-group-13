@@ -27,28 +27,18 @@ library(yardstick)
 ```
 
 ## Abstract: Nikhil
-
 Write a brief one-paragraph abstract that describes the contents of your write-up.
 
-## Dataset: Leena
-=======
 ## Dataset Description: 
->>>>>>> 32c0c53bd9d13bf0a84f9fa6bfe323e838bbaa07
+The dataset involves the analysis of 1,125 different proteins to conclude whether or not certain proteins were blood biomarkers for Autism Spectrum Disorder in boys. Data was obtained from a total of 154 boys with an average age of about 5.65. 76 of the participants were clinically diagnosed with Autism Spectrum Disorder (ASD) and 78 were confirmed to be typically-developing (TD) boys. Blood samples were taken from all participants and analyzed using the SOMAScan platform 1.3k to measure levels of binding to specific proteins.
 
-Write a brief data description, including: how data were obtained; sample characteristics; variables measured; and data preprocessing. This can be largely based on the source paper and should not exceed 1-2 paragraphs.
-
-## Summary of published analysis
-
-Summarize the methodology of the paper in 1-3 paragraphs. You need not explain the methods in depth as we did in class; just indicate what methods were used and how they were combined. If possible, include a diagram that depicts the methodological design. (Quarto has support for [GraphViz and Mermaid flowcharts](https://quarto.org/docs/authoring/diagrams.html).) Provide key results: the proteins selected for the classifier and the estimated accuracy.
-=======
-Obtained data regarding protein abundance was normalized through both log10 and z-transformations. Outliers outside of the range \\\[-3,3\\\] after the z-transformation were dropped. Proteins that were determined to predict ASD were identified through random forest method, t-tests, and correlation methods. The metric of significance was area under the curve.
+Obtained data regarding protein abundance was normalized through both log10 and z-transformations. Outliers outside of the range [-3,3] after the z-transformation were dropped. Proteins that were determined to predict ASD were identified through random forest method, t-tests, and correlation methods. The metric of significance was area under the curve.
 
 ## Summary of published analysis
 
 The study utilized three methods, multiple testing, correlation with severity, and random forest. Multiple testing involves hypothesis testing and t-tests to determine which proteins result in significantly different levels of serum. In the case of the study, the top 10 proteins with the greatest significance were utilized in prediction. Correlation with severity involves finding the strongest correlations between different proteins and ADOS. In the case of the study, they measured protein correlation to ADOS total scores. Variable importance involves a measurement for which predictors have most influence in a random forest. In the case of the study, they trained a model to predict protein importance in ASD in comparison to TD. They were then able to rank these different proteins by importance. With the top-performing proteins from each approach identified, the panel identified the 'core' proteins by determining their presence in each test result.
 
-The five 'core' proteins common across each of the three methods were: mitogen-activated protein kinase 14 (MAPK14), immunoglobulin D (IgD), dermatopontin (DERM), ephrin type-B receptor 2 (EPHB2), and soluble urokinase-type plasminogen activator receptor (suPAR). To optimize AUC score, the following four proteins were added to the five 'core' proteins: receptor tyrosine kinase-like orphan receptor 1 \\\[ROR1\\\], platelet receptor Gl24 \\\[GI24\\\], eukaryotic translation initiation factor 4H \\\[elF-4H\\\], and arylsulfatase B \\\[ARSB\\\]. The 'optimal' nine proteins resulted in a AUC score of 0.860±0.064, where sensitivity (true positive rate) was 0.833±0.118 and specificity (true negative rate) was 0.846±0.118.
->>>>>>> 32c0c53bd9d13bf0a84f9fa6bfe323e838bbaa07
+The five 'core' proteins common across each of the three methods were: mitogen-activated protein kinase 14 (MAPK14), immunoglobulin D (IgD), dermatopontin (DERM), ephrin type-B receptor 2 (EPHB2), and soluble urokinase-type plasminogen activator receptor (suPAR). To optimize AUC score, the following four proteins were added to the five 'core' proteins: receptor tyrosine kinase-like orphan receptor 1 [ROR1], platelet receptor Gl24 [GI24], eukaryotic translation initiation factor 4H [elF-4H], and arylsulfatase B [ARSB]. The 'optimal' nine proteins resulted in a AUC score of 0.860±0.064, where sensitivity (true positive rate) was 0.833±0.118 and specificity (true negative rate) was 0.846±0.118.
 
 ## Findings
 
@@ -64,10 +54,16 @@ Tasks 1-2
 Potential reasons for log-transforming the protein levels in \`biomarker-raw.csv\` include normalizing skewed data by reducing the impact of outliers. Observe the skew and distribution of the raw biomarker data below.
 
 ```{r}
+raw_data <- read.csv("../data/biomarker-raw.csv")
 
 ```
 
+<<<<<<< Updated upstream
 >>>>>>> 32c0c53bd9d13bf0a84f9fa6bfe323e838bbaa07
+=======
+1.  Temporarily remove the outlier trimming from preprocessing and do some exploratory analysis of outlying values. Are there specific *subjects* (not values) that seem to be outliers? If so, are outliers more frequent in one group or the other? (Hint: consider tabluating the number of outlying values per subject.)
+
+>>>>>>> Stashed changes
 ### Methodlogical variations: Nikhil/Sanchit/Shirley
 
 a\) repeat the analysis on training partition
