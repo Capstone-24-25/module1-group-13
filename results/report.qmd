@@ -409,6 +409,58 @@ The old method has better overall discriminatory power, so its better at disting
 
 ### Improved classifier: Nikhil/Sanchit/Shirley
 
+Q3. c)
+```{r}
+# Assume `New_proteins_s1` and `New_proteins_s2` are vectors containing top proteins from different selection methods
+all_proteins <- c(New_proteins_s1, New_proteins_s2) # Combine top proteins from multiple methods
+
+# Set fuzzy threshold: include proteins appearing in at least 70% of the methods
+threshold <- 0.7 *2  # Update `2` based on the number of selection methods used
+fuzzy_intersection_proteins <- names(protein_counts[protein_counts >= threshold])
+fuzzy_metrics <- evaluate_model(fuzzy_intersection_proteins, response, predictors)
+
+# Using hard intersection proteins for evaluation
+hard_intersection_proteins <- intersect(New_proteins_s1, New_proteins_s2)
+hard_metrics <- evaluate_model(hard_intersection_proteins, response, predictors)
+
+# Print proteins from fuzzy intersection
+print(fuzzy_intersection_proteins)
+print(hard_intersection_proteins)
+```
+# Use `fuzzy_intersection_proteins` for modeling instead of `proteins_sstar`
+
+```{r}
+library(randomForest)
+library(pROC) 
+
+# evaluation function
+evaluate_model <- function(selected_proteins, label_data, feature_data) {
+  # Subset data by selected proteins
+  model_data <- feature_data[, selected_proteins, drop = FALSE]
+  
+  # Train Random Forest
+  rf_model <- randomForest(x = model_data, y = label_data, ntree = 1000, importance = TRUE)
+  rf_predictions <- predict(rf_model, model_data, type = "prob")[,2]
+  rf_auroc <- roc(label_data, rf_predictions)$auc
+  
+  # Train Logistic Regression
+  logistic_model <- glm(label_data ~ ., data = model_data, family = "binomial")
+  logistic_predictions <- predict(logistic_model, model_data, type = "response")
+  logistic_auroc <- roc(label_data, logistic_predictions)$auc
+  
+  # Return AUROC values for comparison
+  return(list(rf_auroc = rf_auroc, logistic_auroc = logistic_auroc))
+}
+
+# Display comparison results
+comparison_df <- data.frame(
+  Method = c("Hard Intersection", "Fuzzy Intersection"),
+  RF_AUROC = c(hard_metrics$rf_auroc, fuzzy_metrics$rf_auroc),
+  Logistic_AUROC = c(hard_metrics$logistic_auroc, fuzzy_metrics$logistic_auroc)
+)
+print(comparison_df)
+```
+
 ```{r}
 proteins_simpler <- rf_out$importance %>%
   as_tibble() %>%
