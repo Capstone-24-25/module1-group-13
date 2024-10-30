@@ -37,7 +37,6 @@ The dataset involves the analysis of 1,125 different proteins to conclude whethe
 Obtained data regarding protein abundance was normalized through both log10 and z-transformations. Outliers outside of the range \[-3,3\] after the z-transformation were dropped. Proteins that were determined to predict ASD were identified through random forest method, t-tests, and correlation methods. The metric of significance was area under the curve.
 
 ## Summary of published analysis
-
 The study utilized three methods, multiple testing, correlation with severity, and random forest. Multiple testing involves hypothesis testing and t-tests to determine which proteins result in significantly different levels of serum. In the case of the study, the top 10 proteins with the greatest significance were utilized in prediction. Correlation with severity involves finding the strongest correlations between different proteins and ADOS. In the case of the study, they measured protein correlation to ADOS total scores. Variable importance involves a measurement for which predictors have most influence in a random forest. In the case of the study, they trained a model to predict protein importance in ASD in comparison to TD. They were then able to rank these different proteins by importance. With the top-performing proteins from each approach identified, the panel identified the 'core' proteins by determining their presence in each test result.
 
 The five 'core' proteins common across each of the three methods were: mitogen-activated protein kinase 14 (MAPK14), immunoglobulin D (IgD), dermatopontin (DERM), ephrin type-B receptor 2 (EPHB2), and soluble urokinase-type plasminogen activator receptor (suPAR). To optimize AUC score, the following four proteins were added to the five 'core' proteins: receptor tyrosine kinase-like orphan receptor 1 \[ROR1\], platelet receptor Gl24 \[GI24\], eukaryotic translation initiation factor 4H \[elF-4H\], and arylsulfatase B \[ARSB\]. The 'optimal' nine proteins resulted in a AUC score of 0.860±0.064, where sensitivity (true positive rate) was 0.833±0.118 and specificity (true negative rate) was 0.846±0.118.
@@ -53,7 +52,6 @@ Tasks 1-2
 1.  What do you imagine is the reason for log-transforming the protein levels in \`biomarker-raw.csv\`? (Hint: look at the distribution of raw values for a sample of proteins.)
 
 Potential reasons for log-transforming the protein levels in \`biomarker-raw.csv\` include normalizing skewed data by reducing the impact of outliers. Observe the skew and distribution of the raw biomarker data below.
-
 ```{r}
 raw_data <- read.csv("../data/biomarker-raw.csv")
 
